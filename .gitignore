@@ -29,7 +29,8 @@ htmlcov/
 *~
 
 # 项目特定文件
-data/*.json
+data/*
+!data/.gitkeep
 logs/
 *.log
 
