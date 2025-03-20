@@ -37,6 +37,14 @@ class GaodeAPI:
         params['key'] = self.key
         url = f"{self.BASE_URL}/{endpoint}"
         
+        # 打印请求信息
+        print("\n=== API请求信息 ===")
+        print(f"URL: {url}")
+        print("参数:")
+        for key, value in params.items():
+            if key != 'key':  # 不打印 API key
+                print(f"  {key}: {value}")
+        
         try:
             # 添加请求延时
             time.sleep(self.qps_delay)
@@ -44,8 +52,17 @@ class GaodeAPI:
             response = requests.get(url, params=params)
             result = response.json()
             
+            # 打印响应信息
+            print("\n=== API响应信息 ===")
+            print(f"状态码: {result.get('status')}")
+            print(f"信息: {result.get('info')}")
+            print(f"总数: {result.get('count', '0')}")
+            if result.get('pois'):
+                print(f"本次返回: {len(result['pois'])} 条数据")
+            
             if result['status'] != '1':
                 if result.get('infocode') == '10009':  # QPS超限
+                    print("QPS超限，等待后重试...")
                     # 如果是QPS超限，等待更长时间后重试
                     time.sleep(1)
                     return self._make_request(endpoint, params)
@@ -209,19 +226,26 @@ class GaodeAPI:
         
         try:
             # 获取第一页
+            print("\n开始获取数据...")
             first_page = search_method(page=1, **search_params)
             total_count = int(first_page['count'])
             result = first_page.get('pois', [])
             
-            print(f"总计找到 {total_count} 条数据，开始分页获取...")
-            
+            print(f"\n总计找到 {total_count} 条数据")
+            if total_count == 0:
+                return []
+                
             # 获取剩余页面
             total_pages = (total_count + self.offset - 1) // self.offset
+            if total_pages > 1:
+                print(f"需要获取 {total_pages} 页数据")
+                
             for page in range(2, total_pages + 1):
-                print(f"正在获取第 {page}/{total_pages} 页...")
+                print(f"\n正在获取第 {page}/{total_pages} 页...")
                 page_result = search_method(page=page, **search_params)
                 if page_result.get('pois'):
                     result.extend(page_result['pois'])
+                    print(f"已获取 {len(result)}/{total_count} 条数据")
                 
             return result
             

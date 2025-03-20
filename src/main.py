@@ -2,8 +2,10 @@ import csv
 import json
 import os
 from datetime import datetime
+from typing import List, Dict
 
 from src.api.gaode import GaodeAPI
+from src.utils.excel_reader import CodeReader
 
 
 def load_api_key():
@@ -53,31 +55,74 @@ def save_to_csv(pois: list, filename: str):
             writer.writerow(row)
 
 
+def collect_district_data(api: GaodeAPI, 
+                         district_info: Dict,
+                         poi_types: List[str]) -> List[Dict]:
+    """
+    收集特定区县的POI数据
+    
+    Args:
+        api: GaodeAPI实例
+        district_info: 区县信息
+        poi_types: POI类型代码列表
+    
+    Returns:
+        该区县的POI数据列表
+    """
+    print(f"正在获取{district_info['name']}的数据...")
+    
+    search_params = {
+        'keywords': '充电站|充电桩|充电设施',
+        'types': '|'.join(poi_types),
+        'city': district_info['adcode'],
+        'city_limit': True,
+        'extensions': 'all'
+    }
+    
+    return api.get_poi_total_list(
+        search_type='keywords',
+        **search_params
+    )
+
+
 def main():
     # 加载API密钥
     api_key = load_api_key()
     
-    # 初始化API客户端
+    # 初始化API客户端和代码读取器
     api = GaodeAPI(key=api_key)
+    reader = CodeReader()
     
     try:
-        # 设置搜索参数
-        search_params = {
-            'keywords': '充电站|充电桩',
-            'types': '011100|011102|011103|073000|073001|073002',  # 使用原始代码中的类型代码
-            'city': '北京',  # 改用 city 参数
-            'city_limit': True,
-            'extensions': 'all'
-        }
+        # 获取北京市所有区县代码
+        district_codes = reader.get_district_codes('北京市')
+        # 获取充电设施相关的POI类型代码
+        poi_types = reader.get_poi_types('汽车服务', '充电站')
         
-        print("正在获取北京市充电设施数据...")
-        poi_list = api.get_poi_total_list(
-            search_type='keywords',
-            **search_params
-        )
+        print(f"找到 {len(district_codes)} 个区县")
+        print(f"找到 {len(poi_types)} 个POI类型")
         
-        if not poi_list:
-            print("警告：未获取到任何数据，请检查搜索参数")
+        # 存储所有数据
+        all_pois = []
+        
+        # 遍历每个区县
+        for adcode in district_codes:
+            district_info = reader.get_district_info(adcode)
+            district_pois = collect_district_data(api, district_info, poi_types)
+            
+            if district_pois:
+                # 添加区县信息到每条记录
+                for poi in district_pois:
+                    poi['district_name'] = district_info['name']
+                    poi['district_adcode'] = district_info['adcode']
+                
+                all_pois.extend(district_pois)
+                print(f"{district_info['name']}找到 {len(district_pois)} 个充电设施")
+            else:
+                print(f"{district_info['name']}未找到充电设施")
+        
+        if not all_pois:
+            print("警告：未获取到任何数据")
             return 1
             
         # 创建输出文件名（包含时间戳）
@@ -86,16 +131,16 @@ def main():
         json_file = f'data/charging_stations_{timestamp}.json'
         
         # 保存为CSV格式
-        save_to_csv(poi_list, csv_file)
+        save_to_csv(all_pois, csv_file)
         print(f"CSV数据已保存到: {csv_file}")
         
         # 同时保存原始JSON数据
         os.makedirs('data', exist_ok=True)
         with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(poi_list, f, ensure_ascii=False, indent=2)
+            json.dump(all_pois, f, ensure_ascii=False, indent=2)
         print(f"JSON数据已保存到: {json_file}")
         
-        print(f"共获取到 {len(poi_list)} 个充电设施位置")
+        print(f"共获取到 {len(all_pois)} 个充电设施位置")
         
     except Exception as e:
         print(f"错误: {str(e)}")
