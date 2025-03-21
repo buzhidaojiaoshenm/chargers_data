@@ -70,7 +70,7 @@ class CodeReader:
             mid_category: 中类名称（可选），如"充电站"
             
         Returns:
-            类型代码列表
+            类型代码列表，保持完整格式（包括前导零）
         """
         print("\n=== POI类型匹配过程 ===")
         print(f"大类: {big_category}")
@@ -103,8 +103,9 @@ class CodeReader:
             print(f"大类: {row['大类']}")
             print(f"中类: {row['中类']}")
             print(f"小类: {row['小类']}")
-            
-        return matched_df['NEW_TYPE'].astype(str).tolist()
+        
+        # 确保返回的POI代码保持原始格式（包括前导零）
+        return [f"{int(code):06d}" for code in matched_df['NEW_TYPE'].tolist()]
 
     def get_district_info(self, adcode: str) -> Dict:
         """
