@@ -24,6 +24,13 @@ function check_requirements() {
         exit 1
     fi
 
+    # 检查 search_config.json 是否存在
+    if [ ! -f "config/search_config.json" ]; then
+        echo "错误：未找到 search_config.json 文件"
+        echo "请在 config 目录下创建 search_config.json 文件"
+        exit 1
+    fi
+
     echo "配置文件检查完成！"
 }
 

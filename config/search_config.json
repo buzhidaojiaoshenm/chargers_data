@@ -1,0 +1,248 @@
+{
+    "tasks": [
+        {
+            "name": "东城区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110101",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "dongcheng_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "西城区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110102",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "xicheng_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "朝阳区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110105",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "chaoyang_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "丰台区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110106",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "fengtai_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "石景山区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110107",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "shijingshan_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "海淀区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110108",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "haidian_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "门头沟区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110109",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "mentougou_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "房山区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110111",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "fangshan_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "通州区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110112",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "tongzhou_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "顺义区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110113",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "shunyi_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "昌平区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110114",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "changping_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "大兴区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110115",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "daxing_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "怀柔区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110116",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "huairou_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "平谷区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110117",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "pinggu_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "密云区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110118",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "miyun_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        },
+        {
+            "name": "延庆区充电站搜索",
+            "search_type": "keywords",
+            "params": {
+                "keywords": "充电站|充电桩|充电设施",
+                "types": "011100|011101|011102|011103",
+                "city": "110119",
+                "city_limit": true,
+                "extensions": "all"
+            },
+            "output": {
+                "filename_prefix": "yanqing_charging_stations",
+                "formats": ["csv", "json"]
+            }
+        }
+    ],
+    "global_settings": {
+        "output_dir": "data",
+        "add_timestamp": true
+    }
+} 

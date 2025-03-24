@@ -2,16 +2,25 @@ import csv
 import json
 import os
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from src.api.gaode import GaodeAPI
-from src.utils.excel_reader import CodeReader
+from src.utils.logger import Logger
+
+# 创建全局日志记录器
+logger = Logger()
 
 
-def load_api_key():
+def load_api_key() -> str:
     """加载API密钥"""
     with open('config/api.token', 'r') as f:
         return f.read().strip()
+
+
+def load_search_config() -> Dict[str, Any]:
+    """加载搜索配置"""
+    with open('config/search_config.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 
 def save_to_csv(pois: list, filename: str):
@@ -55,98 +64,101 @@ def save_to_csv(pois: list, filename: str):
             writer.writerow(row)
 
 
-def collect_district_data(api: GaodeAPI, 
-                         district_info: Dict,
-                         poi_types: List[str]) -> List[Dict]:
+def save_results(pois: List[Dict], task: Dict, global_settings: Dict):
     """
-    收集特定区县的POI数据
+    根据配置保存搜索结果
+    
+    Args:
+        pois: POI数据列表
+        task: 任务配置
+        global_settings: 全局设置
+    """
+    if not pois:
+        return
+        
+    # 准备文件名
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S') if global_settings.get('add_timestamp') else ''
+    base_name = f"{task['output']['filename_prefix']}_{timestamp}" if timestamp else task['output']['filename_prefix']
+    output_dir = global_settings.get('output_dir', 'data')
+    
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 保存指定格式
+    for format_type in task['output']['formats']:
+        if format_type.lower() == 'csv':
+            filename = os.path.join(output_dir, f"{base_name}.csv")
+            save_to_csv(pois, filename)
+            logger.info(f"CSV数据已保存到: {filename}")
+            
+        elif format_type.lower() == 'json':
+            filename = os.path.join(output_dir, f"{base_name}.json")
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(pois, f, ensure_ascii=False, indent=2)
+            logger.info(f"JSON数据已保存到: {filename}")
+
+
+def execute_search_task(api: GaodeAPI, task: Dict) -> List[Dict]:
+    """
+    执行单个搜索任务
     
     Args:
         api: GaodeAPI实例
-        district_info: 区县信息
-        poi_types: POI类型代码列表
-    
+        task: 任务配置
+        
     Returns:
-        该区县的POI数据列表
+        搜索结果列表
     """
-    print(f"正在获取{district_info['name']}的数据...")
+    logger.info(f"\n开始执行任务: {task['name']}")
     
-    search_params = {
-        'keywords': '充电站|充电桩|充电设施',
-        'types': '|'.join(poi_types),
-        'city': district_info['adcode'],
-        'city_limit': True,
-        'extensions': 'all'
-    }
+    search_type = task['search_type']
+    params = task['params']
     
-    return api.get_poi_total_list(
-        search_type='keywords',
-        **search_params
-    )
+    try:
+        return api.get_poi_total_list(search_type=search_type, **params)
+    except Exception as e:
+        logger.error(f"任务 '{task['name']}' 执行失败: {str(e)}")
+        return []
 
 
 def main():
-    # 加载API密钥
-    api_key = load_api_key()
-    
-    # 初始化API客户端和代码读取器
-    api = GaodeAPI(key=api_key)
-    reader = CodeReader()
-    
     try:
-        # 获取北京市所有区县代码
-        district_codes = reader.get_district_codes('北京市')
-        # 获取充电设施相关的POI类型代码
-        poi_types = reader.get_poi_types('汽车服务', '充电站')
+        logger.info("开始POI数据搜索程序")
         
-        print(f"找到 {len(district_codes)} 个区县")
-        print(f"找到 {len(poi_types)} 个POI类型")
+        # 加载配置
+        api_key = load_api_key()
+        config = load_search_config()
+        logger.info("配置文件加载完成")
         
-        # 存储所有数据
-        all_pois = []
+        # 初始化API客户端
+        api = GaodeAPI(key=api_key)
         
-        # 遍历每个区县
-        for adcode in district_codes:
-            district_info = reader.get_district_info(adcode)
-            district_pois = collect_district_data(api, district_info, poi_types)
+        # 获取全局设置
+        global_settings = config.get('global_settings', {})
+        
+        # 执行每个搜索任务
+        total_tasks = len(config['tasks'])
+        logger.info(f"共有 {total_tasks} 个搜索任务待执行")
+        
+        for i, task in enumerate(config['tasks'], 1):
+            logger.info(f"正在执行第 {i}/{total_tasks} 个任务")
             
-            if district_pois:
-                # 添加区县信息到每条记录
-                for poi in district_pois:
-                    poi['district_name'] = district_info['name']
-                    poi['district_adcode'] = district_info['adcode']
-                
-                all_pois.extend(district_pois)
-                print(f"{district_info['name']}找到 {len(district_pois)} 个充电设施")
+            # 执行搜索
+            pois = execute_search_task(api, task)
+            
+            if pois:
+                logger.info(f"任务 '{task['name']}' 找到 {len(pois)} 个POI")
+                # 保存结果
+                save_results(pois, task, global_settings)
             else:
-                print(f"{district_info['name']}未找到充电设施")
+                logger.warning(f"任务 '{task['name']}' 未找到任何POI")
         
-        if not all_pois:
-            print("警告：未获取到任何数据")
-            return 1
-            
-        # 创建输出文件名（包含时间戳）
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        csv_file = f'data/charging_stations_{timestamp}.csv'
-        json_file = f'data/charging_stations_{timestamp}.json'
-        
-        # 保存为CSV格式
-        save_to_csv(all_pois, csv_file)
-        print(f"CSV数据已保存到: {csv_file}")
-        
-        # 同时保存原始JSON数据
-        os.makedirs('data', exist_ok=True)
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(all_pois, f, ensure_ascii=False, indent=2)
-        print(f"JSON数据已保存到: {json_file}")
-        
-        print(f"共获取到 {len(all_pois)} 个充电设施位置")
+        logger.info("所有任务执行完成")
+        return 0
         
     except Exception as e:
-        print(f"错误: {str(e)}")
+        logger.error(f"程序执行出错: {str(e)}")
         return 1
-    
-    return 0
 
 
 if __name__ == "__main__":
