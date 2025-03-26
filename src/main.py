@@ -1,10 +1,10 @@
-import csv
-import json
 import os
+import json
+import csv
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Dict, List, Any
 
-from src.api.gaode import GaodeAPI
+from src.api.gaode2 import GaodeAPI2
 from src.utils.logger import Logger
 
 # 创建全局日志记录器
@@ -12,154 +12,180 @@ logger = Logger()
 
 
 def load_api_key() -> str:
-    """加载API密钥"""
-    with open('config/api.token', 'r') as f:
-        return f.read().strip()
-
-
-def load_search_config() -> Dict[str, Any]:
-    """加载搜索配置"""
-    with open('config/search_config.json', 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
-def save_to_csv(pois: list, filename: str):
-    """
-    将POI数据保存为CSV文件
-    
-    Args:
-        pois: POI数据列表
-        filename: 输出文件名
-    """
-    if not pois:
-        return
-    
-    # 定义要提取的字段
-    fields = [
-        'id', 'name', 'type', 'typecode', 'address', 'pname', 'cityname',
-        'adname', 'location', 'tel', 'business_area', 'biz_ext.open_time',
-        'biz_ext.rating', 'biz_ext.cost'
-    ]
-    
-    # 创建目录
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    
-    with open(filename, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.writer(f)
-        
-        # 写入表头
-        writer.writerow(fields)
-        
-        # 写入数据
-        for poi in pois:
-            row = []
-            for field in fields:
-                if '.' in field:
-                    # 处理嵌套字段
-                    parent, child = field.split('.')
-                    value = poi.get(parent, {}).get(child, '')
-                else:
-                    value = poi.get(field, '')
-                row.append(value)
-            writer.writerow(row)
-
-
-def save_results(pois: List[Dict], task: Dict, global_settings: Dict):
-    """
-    根据配置保存搜索结果
-    
-    Args:
-        pois: POI数据列表
-        task: 任务配置
-        global_settings: 全局设置
-    """
-    if not pois:
-        return
-        
-    # 准备文件名
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S') if global_settings.get('add_timestamp') else ''
-    base_name = f"{task['output']['filename_prefix']}_{timestamp}" if timestamp else task['output']['filename_prefix']
-    output_dir = global_settings.get('output_dir', 'data')
-    
-    # 确保输出目录存在
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # 保存指定格式
-    for format_type in task['output']['formats']:
-        if format_type.lower() == 'csv':
-            filename = os.path.join(output_dir, f"{base_name}.csv")
-            save_to_csv(pois, filename)
-            logger.info(f"CSV数据已保存到: {filename}")
-            
-        elif format_type.lower() == 'json':
-            filename = os.path.join(output_dir, f"{base_name}.json")
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(pois, f, ensure_ascii=False, indent=2)
-            logger.info(f"JSON数据已保存到: {filename}")
-
-
-def execute_search_task(api: GaodeAPI, task: Dict) -> List[Dict]:
-    """
-    执行单个搜索任务
-    
-    Args:
-        api: GaodeAPI实例
-        task: 任务配置
-        
-    Returns:
-        搜索结果列表
-    """
-    logger.info(f"\n开始执行任务: {task['name']}")
-    
-    search_type = task['search_type']
-    params = task['params']
-    
+    """从配置文件加载API密钥"""
     try:
-        return api.get_poi_total_list(search_type=search_type, **params)
+        with open('config/api.token', 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        raise Exception("请在config/api.token文件中配置高德地图API密钥")
+
+
+def load_config() -> Dict:
+    """加载搜索配置"""
+    try:
+        with open('config/search_config.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise Exception("请确保config/search_config.json文件存在")
+    except json.JSONDecodeError:
+        raise Exception("search_config.json格式错误")
+
+
+def save_to_csv(data: List[Dict], filename: str, fields: List[str]) -> None:
+    """保存数据到CSV文件"""
+    if not data:
+        logger.warning(f"没有数据要保存到 {filename}")
+        return
+
+    try:
+        with open(filename, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            
+            for item in data:
+                row = {}
+                for field in fields:
+                    if '.' in field:  # 处理嵌套字段
+                        parts = field.split('.')
+                        value = item
+                        for part in parts:
+                            if isinstance(value, dict):
+                                value = value.get(part, '')
+                            else:
+                                value = ''
+                                break
+                    else:
+                        value = item.get(field, '')
+                    
+                    # 处理特殊字段
+                    if field == 'photos':
+                        if isinstance(value, list):
+                            value = ';'.join(photo.get('url', '') for photo in value)
+                    elif field == 'children':
+                        if isinstance(value, list):
+                            value = len(value)  # 只记录子POI数量
+                            
+                    row[field] = value
+                writer.writerow(row)
+        logger.info(f"数据已保存到: {filename}")
     except Exception as e:
-        logger.error(f"任务 '{task['name']}' 执行失败: {str(e)}")
-        return []
+        logger.error(f"保存CSV文件时出错: {str(e)}")
+
+
+def save_to_json(data: List[Dict], filename: str) -> None:
+    """保存数据到JSON文件"""
+    if not data:
+        logger.warning(f"没有数据要保存到 {filename}")
+        return
+
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        logger.info(f"数据已保存到: {filename}")
+    except Exception as e:
+        logger.error(f"保存JSON文件时出错: {str(e)}")
+
+
+def save_results(data: List[Dict], output_config: Dict, global_settings: Dict) -> None:
+    """保存搜索结果"""
+    if not data:
+        logger.warning("没有数据要保存")
+        return
+
+    # 准备输出目录
+    base_output_dir = global_settings.get('output_dir', 'data')
+    
+    # 创建带有时间戳的子目录
+    current_time = datetime.now()
+    time_subfolder = current_time.strftime('%Y%m%d_%H%M')
+    output_dir = os.path.join(base_output_dir, time_subfolder)
+    
+    os.makedirs(output_dir, exist_ok=True)
+    logger.info(f"输出目录: {output_dir}")
+
+    # 添加时间戳到文件名（如果配置中指定）
+    timestamp = ''
+    if global_settings.get('add_timestamp', False):
+        timestamp = f"_{current_time.strftime('%Y%m%d_%H%M%S')}"
+
+    # 定义要保存的字段
+    fields = [
+        'id', 'name', 'type', 'typecode', 'address', 'pname', 'cityname', 'adname',
+        'location', 'tel', 'website', 'email', 'postcode', 'business_area',
+        'business.open_time', 'business.rating', 'business.cost',
+        'indoor.indoor_map', 'indoor.cpid', 'indoor.floor', 'indoor.truefloor',
+        'navi.entr_location', 'navi.exit_location',
+        'photos', 'children'
+    ]
+
+    # 保存不同格式的文件
+    filename_prefix = output_config.get('filename_prefix', 'poi_data')
+    formats = output_config.get('formats', ['csv'])
+
+    for fmt in formats:
+        filename = os.path.join(output_dir, f"{filename_prefix}{timestamp}.{fmt}")
+        if fmt.lower() == 'csv':
+            save_to_csv(data, filename, fields)
+        elif fmt.lower() == 'json':
+            save_to_json(data, filename)
+        else:
+            logger.warning(f"不支持的文件格式: {fmt}")
+
+
+def execute_search_task(api: GaodeAPI2, task: Dict) -> None:
+    """执行单个搜索任务"""
+    try:
+        search_type = task.get('search_type', 'keywords')
+        params = task.get('params', {})
+        
+        logger.info(f"\n开始执行任务: {task.get('name', '未命名任务')}")
+        logger.info(f"搜索类型: {search_type}")
+        logger.info("搜索参数:")
+        for key, value in params.items():
+            logger.info(f"  {key}: {value}")
+
+        # 获取所有数据
+        result = api.get_poi_total_list(search_type, **params)
+        
+        if result:
+            logger.info(f"\n成功获取 {len(result)} 条数据")
+            # 保存结果
+            save_results(result, task.get('output', {}), config.get('global_settings', {}))
+        else:
+            logger.warning("未获取到数据")
+
+    except Exception as e:
+        logger.error(f"执行任务时出错: {str(e)}")
 
 
 def main():
+    """主函数"""
     try:
-        logger.info("开始POI数据搜索程序")
-        
-        # 加载配置
+        # 加载API密钥和配置
         api_key = load_api_key()
-        config = load_search_config()
-        logger.info("配置文件加载完成")
-        
+        global config
+        config = load_config()
+
         # 初始化API客户端
-        api = GaodeAPI(key=api_key)
-        
-        # 获取全局设置
-        global_settings = config.get('global_settings', {})
-        
-        # 执行每个搜索任务
-        total_tasks = len(config['tasks'])
-        logger.info(f"共有 {total_tasks} 个搜索任务待执行")
-        
-        for i, task in enumerate(config['tasks'], 1):
-            logger.info(f"正在执行第 {i}/{total_tasks} 个任务")
-            
-            # 执行搜索
-            pois = execute_search_task(api, task)
-            
-            if pois:
-                logger.info(f"任务 '{task['name']}' 找到 {len(pois)} 个POI")
-                # 保存结果
-                save_results(pois, task, global_settings)
-            else:
-                logger.warning(f"任务 '{task['name']}' 未找到任何POI")
-        
-        logger.info("所有任务执行完成")
-        return 0
-        
+        api = GaodeAPI2(api_key)
+
+        # 获取任务列表
+        tasks = config.get('tasks', [])
+        if not tasks:
+            logger.warning("配置文件中没有定义搜索任务")
+            return
+
+        logger.info(f"共加载 {len(tasks)} 个任务")
+
+        # 执行每个任务
+        for task in tasks:
+            execute_search_task(api, task)
+
+        logger.info("\n所有任务执行完成")
+
     except Exception as e:
         logger.error(f"程序执行出错: {str(e)}")
-        return 1
 
 
-if __name__ == "__main__":
-    exit(main()) 
+if __name__ == '__main__':
+    main() 
