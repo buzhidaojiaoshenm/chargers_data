@@ -36,7 +36,7 @@ run-simple:
 		echo "错误：请先运行 'make init' 初始化项目"; \
 		exit 1; \
 	fi
-	@bash -c "source venv/bin/activate && PYTHONPATH=. python src/main.py -g shanghai_keywords --task-count 1 $(ARGS)"
+	@bash -c "source venv/bin/activate && PYTHONPATH=. python src/main.py -g shanghai_polygon --task-count 1 $(ARGS)"
 
 # 运行API测试
 test-api:

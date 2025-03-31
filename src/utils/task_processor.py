@@ -387,6 +387,84 @@ class TaskProcessor:
         Returns:
             搜索结果列表
         """
+        # 确定是否需要多页获取数据
+        search_function_name = search_method.__name__
+        
+        # 对于单页请求，使用原来的方法
+        if search_function_name == 'search_by_id':
+            retries = 0
+            while retries <= self.max_retries:
+                try:
+                    result = search_method(**params)
+                    
+                    # 检查result是否为字典且包含pois键
+                    if isinstance(result, dict) and 'pois' in result:
+                        return result['pois']
+                    elif isinstance(result, list):
+                        # 如果已经是列表，则直接返回
+                        return result
+                    else:
+                        self.logger.error(f"API返回格式错误，未找到pois列表: {type(result)}")
+                        if isinstance(result, dict):
+                            self.logger.debug(f"API响应：{result.keys()}")
+                        raise Exception("API返回格式错误，未找到pois列表")
+                except Exception as e:
+                    retries += 1
+                    if retries > self.max_retries:
+                        raise Exception(f"达到最大重试次数，搜索失败: {str(e)}")
+                    
+                    self.logger.warning(f"搜索失败，正在重试 ({retries}/{self.max_retries}): {str(e)}")
+                    time.sleep(self.retry_delay)
+        
+        # 对于需要分页获取的搜索方法，使用get_poi_total_list
+        else:
+            # 确定搜索类型
+            search_type_mapping = {
+                'search_by_keywords': 'keywords',
+                'search_around': 'around',
+                'search_polygon': 'polygon'
+            }
+            
+            search_type = search_type_mapping.get(search_function_name)
+            if not search_type:
+                raise ValueError(f"不支持的搜索方法: {search_function_name}")
+            
+            # 获取API实例
+            api = search_method.__self__
+            if not hasattr(api, 'get_poi_total_list'):
+                self.logger.warning("API实例没有get_poi_total_list方法，将只获取第一页数据")
+                # 回退到原始搜索方法
+                return self._execute_single_search(search_method, params)
+            
+            # 使用get_poi_total_list获取所有页面数据
+            retries = 0
+            while retries <= self.max_retries:
+                try:
+                    self.logger.info(f"使用分页获取方式获取所有数据...")
+                    all_pois = api.get_poi_total_list(search_type=search_type, **params)
+                    return all_pois
+                except Exception as e:
+                    retries += 1
+                    if retries > self.max_retries:
+                        raise Exception(f"达到最大重试次数，搜索失败: {str(e)}")
+                    
+                    self.logger.warning(f"搜索失败，正在重试 ({retries}/{self.max_retries}): {str(e)}")
+                    time.sleep(self.retry_delay)
+        
+        # 如果执行到这里，说明出现了意外情况
+        raise Exception("搜索执行失败，未能获取数据")
+        
+    def _execute_single_search(self, search_method: Callable, params: Dict) -> List[Dict]:
+        """
+        执行单次API搜索，不使用分页获取所有数据
+        
+        Args:
+            search_method: API搜索方法
+            params: 搜索参数
+            
+        Returns:
+            搜索结果列表
+        """
         retries = 0
         while retries <= self.max_retries:
             try:
