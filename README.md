@@ -17,6 +17,7 @@
 - **任务数量控制**：支持限制处理的任务数量，方便测试和调试
 - **多边形网格搜索**：支持各种类型的多边形（三角形、四边形、六边形等）
 - **边长控制**：支持指定多边形的边长而非半径
+- **直接使用多边形坐标**：支持直接使用已格式化的多边形坐标，无需额外处理
 
 ## 项目结构
 
@@ -174,7 +175,9 @@ python src/main.py -c my_config.json
 }
 ```
 
-## 多边形网格搜索
+## 多边形搜索
+
+### 自动生成多边形网格
 
 支持根据指定的参数生成不同形状的多边形网格进行搜索：
 
@@ -195,6 +198,33 @@ polygons = generate_polygon_grid(
 # num_sides=4  # 四边形
 # num_sides=8  # 八边形
 ```
+
+### 直接使用多边形坐标
+
+可以直接指定多边形的经纬度坐标对，无需进行格式转换：
+
+```json
+{
+  "tasks": [
+    {
+      "name": "自定义多边形搜索",
+      "params": {
+        "keywords": "充电站",
+        "types": "011100|011101|011102|011103",
+        "polygon": "116.460988,40.006919|116.48231,40.007381|116.47516,39.99713|116.460988,40.006919",
+        "raw_polygon": true,  // 设置为true表示使用原始多边形坐标，无需额外格式转换
+        "show_fields": "children,business,indoor,navi,photos"
+      },
+      "output": {
+        "filename_prefix": "custom_polygon_search",
+        "formats": ["csv", "json"]
+      }
+    }
+  ]
+}
+```
+
+如果不设置`raw_polygon`参数或设置为`false`，系统会自动检查并确保多边形坐标首尾相同（闭合）。
 
 ## 示例用法
 
@@ -271,6 +301,35 @@ for i, polygon in enumerate(polygons):
 save_to_file(all_pois, "data/all_pois.json", "json")
 ```
 
+### 自定义多边形搜索示例
+
+```python
+from src.utils.api_factory import APIFactory
+from src.utils.config_parser import load_api_key
+from src.utils.data_saver import save_to_file
+
+# 加载API密钥和创建API实例
+api_key = load_api_key('gaode')
+api = APIFactory.get_api_instance('gaode2', api_key)
+
+# 定义自定义多边形（确保首尾坐标相同以闭合多边形）
+custom_polygon = "116.460988,40.006919|116.48231,40.007381|116.47516,39.99713|116.460988,40.006919"
+
+# 执行搜索
+result = api.search_polygon(
+    keywords="充电站",
+    polygon=custom_polygon,
+    show_fields="children,business,indoor,navi,photos"
+)
+
+# 提取POI列表
+pois = result.get('pois', [])
+print(f"找到 {len(pois)} 个POI")
+
+# 保存结果
+save_to_file(pois, "data/custom_polygon_pois.json", "json")
+```
+
 ### 使用任务处理器
 
 ```python
@@ -297,6 +356,9 @@ result = processor.process_task_group("my_group", {
 ```
 
 ## 最近更新
+
+### 直接使用多边形坐标
+添加了`raw_polygon`参数，支持直接使用已格式化的多边形坐标，无需额外的格式转换。
 
 ### 任务数量控制
 添加了`--task-count`参数，支持限制处理的任务数量，方便测试和调试。

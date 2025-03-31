@@ -64,4 +64,22 @@ clean:
 
 # 清理所有（包括数据）
 clean-all: clean clean-data
-	@echo "项目完全清理完成" 
+	@echo "项目完全清理完成"
+
+# 运行自定义多边形搜索示例
+run-custom-polygon:
+	@echo "运行自定义多边形搜索示例..."
+	@if [ ! -d "venv" ]; then \
+		echo "错误：请先运行 'make init' 初始化项目"; \
+		exit 1; \
+	fi
+	@bash -c "source venv/bin/activate && PYTHONPATH=. python src/examples/custom_polygon_search.py"
+
+# 使用自定义配置文件运行
+run-custom-config:
+	@echo "使用自定义配置文件运行多边形搜索..."
+	@if [ ! -d "venv" ]; then \
+		echo "错误：请先运行 'make init' 初始化项目"; \
+		exit 1; \
+	fi
+	@bash -c "source venv/bin/activate && PYTHONPATH=. python src/main.py -c config/custom_polygon_example.json" 

@@ -5,6 +5,25 @@
             "search_method": "polygon",
             "tasks": [
                 {
+                    "name": "上海人民广场周边自定义多边形搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "polygon": "121.467209,31.235272|121.479912,31.235272|121.479912,31.225843|121.467209,31.225843|121.467209,31.235272",
+                        "raw_polygon": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "people_square_custom_polygon",
+                        "formats": [
+                            "csv",
+                            "json"
+                        ]
+                    }
+                },
+                {
                     "name": "上海中心区域充电站多边形网格搜索",
                     "params": {
                         "keywords": "充电站|充电桩|充电设施",

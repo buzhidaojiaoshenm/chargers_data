@@ -244,8 +244,15 @@ class TaskProcessor:
         if not polygon:
             raise ValueError("缺少必要参数: polygon 或 polygon_grid")
         
-        # 确保多边形参数格式正确
-        params['polygon'] = coords_to_polygon_param(polygon)
+        # 检查是否需要对多边形坐标进行格式转换
+        raw_polygon = params.pop('raw_polygon', False)  # 从params中提取并移除raw_polygon参数
+        
+        # 如果不是原始多边形坐标，则确保多边形参数格式正确
+        if not raw_polygon:
+            self.logger.info("对多边形坐标进行格式转换")
+            params['polygon'] = coords_to_polygon_param(polygon)
+        else:
+            self.logger.info("使用原始多边形坐标，不进行转换")
         
         # 执行搜索
         self.logger.info(f"执行多边形区域搜索")
@@ -281,6 +288,9 @@ class TaskProcessor:
         # 移除网格配置，避免传递给API
         if 'polygon_grid' in params:
             del params['polygon_grid']
+            
+        # 检查是否使用原始多边形坐标
+        raw_polygon = params.pop('raw_polygon', False)  # 从params中提取并移除raw_polygon参数
         
         # 生成多边形网格
         center_lng = grid_config.get('center_lng')
@@ -311,7 +321,14 @@ class TaskProcessor:
             
             # 更新搜索参数
             polygon_params = params.copy()
-            polygon_params['polygon'] = polygon
+            
+            # 如果不是原始多边形坐标，则确保多边形参数格式正确
+            if not raw_polygon:
+                polygon_params['polygon'] = polygon  # 已经是正确格式，不需要再转换
+            else:
+                # 由于网格生成的多边形已经是正确格式，这里仅作记录
+                self.logger.info("使用原始多边形坐标模式，但网格生成的多边形已是标准格式")
+                polygon_params['polygon'] = polygon
             
             # 执行搜索
             try:
