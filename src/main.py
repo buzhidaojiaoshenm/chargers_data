@@ -1,191 +1,143 @@
+"""
+POI数据搜索主模块
+
+使用模块化设计，支持多种API和多种搜索方式。
+"""
+import sys
 import os
+import time
+import argparse
 import json
-import csv
-from datetime import datetime
 from typing import Dict, List, Any
 
-from src.api.gaode2 import GaodeAPI2
-from src.utils.logger import Logger
-
-# 创建全局日志记录器
-logger = Logger()
+from src.utils.config_parser import ConfigParser, create_default_config
+from src.utils.task_processor import TaskProcessor
+from src.utils.logger import setup_logger
 
 
-def load_api_key() -> str:
-    """从配置文件加载API密钥"""
-    try:
-        with open('config/api.token', 'r') as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        raise Exception("请在config/api.token文件中配置高德地图API密钥")
-
-
-def load_config() -> Dict:
-    """加载搜索配置"""
-    try:
-        with open('config/search_config.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        raise Exception("请确保config/search_config.json文件存在")
-    except json.JSONDecodeError:
-        raise Exception("search_config.json格式错误")
-
-
-def save_to_csv(data: List[Dict], filename: str, fields: List[str]) -> None:
-    """保存数据到CSV文件"""
-    if not data:
-        logger.warning(f"没有数据要保存到 {filename}")
-        return
-
-    try:
-        with open(filename, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fields)
-            writer.writeheader()
-            
-            for item in data:
-                row = {}
-                for field in fields:
-                    if '.' in field:  # 处理嵌套字段
-                        parts = field.split('.')
-                        value = item
-                        for part in parts:
-                            if isinstance(value, dict):
-                                value = value.get(part, '')
-                            else:
-                                value = ''
-                                break
-                    else:
-                        value = item.get(field, '')
-                    
-                    # 处理特殊字段
-                    if field == 'photos':
-                        if isinstance(value, list):
-                            value = ';'.join(photo.get('url', '') for photo in value)
-                    elif field == 'children':
-                        if isinstance(value, list):
-                            value = len(value)  # 只记录子POI数量
-                            
-                    row[field] = value
-                writer.writerow(row)
-        logger.info(f"数据已保存到: {filename}")
-    except Exception as e:
-        logger.error(f"保存CSV文件时出错: {str(e)}")
-
-
-def save_to_json(data: List[Dict], filename: str) -> None:
-    """保存数据到JSON文件"""
-    if not data:
-        logger.warning(f"没有数据要保存到 {filename}")
-        return
-
-    try:
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        logger.info(f"数据已保存到: {filename}")
-    except Exception as e:
-        logger.error(f"保存JSON文件时出错: {str(e)}")
-
-
-def save_results(data: List[Dict], output_config: Dict, global_settings: Dict) -> None:
-    """保存搜索结果"""
-    if not data:
-        logger.warning("没有数据要保存")
-        return
-
-    # 准备输出目录
-    base_output_dir = global_settings.get('output_dir', 'data')
+def main(config_file: str = 'config/search_config.json', group_name: str = None, task_count: int = None):
+    """
+    主函数，处理POI搜索任务
     
-    # 创建带有时间戳的子目录
-    current_time = datetime.now()
-    time_subfolder = current_time.strftime('%Y%m%d_%H%M')
-    output_dir = os.path.join(base_output_dir, time_subfolder)
+    Args:
+        config_file: 配置文件路径
+        group_name: 要处理的任务组名称，如果为None则处理所有任务组
+        task_count: 要处理的任务数量，如果为None则处理所有任务
+    """
+    # 检查配置文件是否存在，如果不存在则创建默认配置
+    if not os.path.exists(config_file):
+        print(f"配置文件 {config_file} 不存在，创建默认配置...")
+        create_default_config(config_file)
     
-    os.makedirs(output_dir, exist_ok=True)
-    logger.info(f"输出目录: {output_dir}")
-
-    # 添加时间戳到文件名（如果配置中指定）
-    timestamp = ''
-    if global_settings.get('add_timestamp', False):
-        timestamp = f"_{current_time.strftime('%Y%m%d_%H%M%S')}"
-
-    # 定义要保存的字段
-    fields = [
-        'id', 'name', 'type', 'typecode', 'address', 'pname', 'cityname', 'adname',
-        'location', 'tel', 'website', 'email', 'postcode', 'business_area',
-        'business.open_time', 'business.rating', 'business.cost',
-        'indoor.indoor_map', 'indoor.cpid', 'indoor.floor', 'indoor.truefloor',
-        'navi.entr_location', 'navi.exit_location',
-        'photos', 'children'
-    ]
-
-    # 保存不同格式的文件
-    filename_prefix = output_config.get('filename_prefix', 'poi_data')
-    formats = output_config.get('formats', ['csv'])
-
-    for fmt in formats:
-        filename = os.path.join(output_dir, f"{filename_prefix}{timestamp}.{fmt}")
-        if fmt.lower() == 'csv':
-            save_to_csv(data, filename, fields)
-        elif fmt.lower() == 'json':
-            save_to_json(data, filename)
-        else:
-            logger.warning(f"不支持的文件格式: {fmt}")
-
-
-def execute_search_task(api: GaodeAPI2, task: Dict) -> None:
-    """执行单个搜索任务"""
-    try:
-        search_type = task.get('search_type', 'keywords')
-        params = task.get('params', {})
-        
-        logger.info(f"\n开始执行任务: {task.get('name', '未命名任务')}")
-        logger.info(f"搜索类型: {search_type}")
-        logger.info("搜索参数:")
-        for key, value in params.items():
-            logger.info(f"  {key}: {value}")
-
-        # 获取所有数据
-        result = api.get_poi_total_list(search_type, **params)
-        
-        if result:
-            logger.info(f"\n成功获取 {len(result)} 条数据")
-            # 保存结果
-            save_results(result, task.get('output', {}), config.get('global_settings', {}))
-        else:
-            logger.warning("未获取到数据")
-
-    except Exception as e:
-        logger.error(f"执行任务时出错: {str(e)}")
-
-
-def main():
-    """主函数"""
-    try:
-        # 加载API密钥和配置
-        api_key = load_api_key()
-        global config
-        config = load_config()
-
-        # 初始化API客户端
-        api = GaodeAPI2(api_key)
-
-        # 获取任务列表
-        tasks = config.get('tasks', [])
-        if not tasks:
-            logger.warning("配置文件中没有定义搜索任务")
+    # 解析配置文件
+    config_parser = ConfigParser(config_file)
+    task_groups, global_settings = config_parser.parse_config()
+    
+    # 设置日志记录器
+    logger = setup_logger(global_settings)
+    logger.info(f"加载配置文件: {config_file}")
+    
+    # 检查是否有任务组
+    if not task_groups:
+        logger.error("配置文件中没有任务组定义")
+        return
+    
+    # 统计信息
+    total_groups = len(task_groups)
+    processed_groups = 0
+    successful_tasks = 0
+    failed_tasks = 0
+    
+    # 创建任务处理器
+    task_processor = TaskProcessor(global_settings)
+    
+    # 处理指定任务组或所有任务组
+    if group_name:
+        if group_name not in task_groups:
+            logger.error(f"任务组 '{group_name}' 不存在")
             return
+        
+        # 只处理指定的任务组
+        groups_to_process = {group_name: task_groups[group_name]}
+    else:
+        # 处理所有任务组
+        groups_to_process = task_groups
+    
+    # 记录开始时间
+    start_time = time.time()
+    
+    # 处理每个任务组
+    for group_name, group_config in groups_to_process.items():
+        logger.info(f"处理任务组 {group_name} ({processed_groups + 1}/{len(groups_to_process)})")
+        
+        # 如果指定了任务数量，则限制处理的任务数
+        if task_count is not None and task_count > 0:
+            original_tasks = group_config.get('tasks', [])
+            limited_tasks = original_tasks[:task_count]
+            logger.info(f"限制处理 {task_count} 个任务（共 {len(original_tasks)} 个）")
+            
+            # 创建新的配置，只包含限定数量的任务
+            limited_config = group_config.copy()
+            limited_config['tasks'] = limited_tasks
+            
+            # 处理任务组
+            result = task_processor.process_task_group(group_name, limited_config)
+        else:
+            # 处理所有任务
+            result = task_processor.process_task_group(group_name, group_config)
+        
+        # 更新统计信息
+        processed_groups += 1
+        if result.get('successful_tasks'):
+            successful_tasks += result['successful_tasks']
+        
+        if result.get('total_tasks') and result.get('successful_tasks'):
+            failed_tasks += result['total_tasks'] - result['successful_tasks']
+    
+    # 记录结束时间和总运行时间
+    end_time = time.time()
+    total_time = end_time - start_time
+    
+    # 打印统计信息
+    logger.info("=" * 50)
+    logger.info("任务执行完成")
+    logger.info(f"总任务组: {total_groups}")
+    logger.info(f"处理任务组: {processed_groups}")
+    logger.info(f"成功任务: {successful_tasks}")
+    logger.info(f"失败任务: {failed_tasks}")
+    logger.info(f"总用时: {total_time:.2f} 秒")
+    logger.info("=" * 50)
 
-        logger.info(f"共加载 {len(tasks)} 个任务")
 
-        # 执行每个任务
-        for task in tasks:
-            execute_search_task(api, task)
+def parse_args():
+    """
+    解析命令行参数
+    
+    Returns:
+        解析后的参数
+    """
+    parser = argparse.ArgumentParser(description='POI数据搜索工具')
+    parser.add_argument('-c', '--config', default='config/search_config.json',
+                      help='配置文件路径')
+    parser.add_argument('-g', '--group', default=None,
+                      help='要处理的任务组名称，不指定则处理所有任务组')
+    parser.add_argument('-t', '--task-count', type=int, default=None,
+                      help='要处理的任务数量，不指定则处理所有任务')
+    parser.add_argument('--create-config', action='store_true',
+                      help='创建默认配置文件并退出')
+    
+    return parser.parse_args()
 
-        logger.info("\n所有任务执行完成")
 
-    except Exception as e:
-        logger.error(f"程序执行出错: {str(e)}")
-
-
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    # 解析命令行参数
+    args = parse_args()
+    
+    # 如果指定了创建配置文件
+    if args.create_config:
+        create_default_config(args.config)
+        print(f"默认配置文件已创建: {args.config}")
+        sys.exit(0)
+    
+    # 执行主函数
+    main(args.config, args.group, args.task_count) 

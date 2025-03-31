@@ -1,280 +1,328 @@
 {
-    "tasks": [
-        {
-            "name": "黄浦区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310101",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "huangpu_charging_stations",
-                "formats": ["csv", "json"]
-            }
+    "task_groups": {
+        "shanghai_polygon": {
+            "api": "gaode2",
+            "search_method": "polygon",
+            "tasks": [
+                {
+                    "name": "上海中心区域充电站多边形网格搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "polygon_grid": {
+                            "center_lng": 121.472644,
+                            "center_lat": 31.231706,
+                            "region_radius": 5000,
+                            "edge_length": 1000,
+                            "num_sides": 6
+                        },
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "shanghai_center_polygon",
+                        "formats": [
+                            "csv",
+                            "json"
+                        ]
+                    }
+                }
+            ]
         },
-        {
-            "name": "徐汇区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310104",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "xuhui_charging_stations",
-                "formats": ["csv", "json"]
-            }
+        "shanghai_keywords": {
+            "api": "gaode2",
+            "search_method": "keywords",
+            "tasks": [
+                {
+                    "name": "黄浦区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310101",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "huangpu_charging",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "徐汇区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310104",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "xuhui_charging",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "长宁区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310105",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "changning_charging",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "静安区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310106",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "jingan_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "普陀区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310107",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "putuo_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "虹口区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310109",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "hongkou_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "杨浦区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310110",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "yangpu_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "闵行区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310112",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "minhang_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "宝山区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310113",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "baoshan_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "嘉定区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310114",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "jiading_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "浦东新区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310115",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "pudong_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "金山区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310116",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "jinshan_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "松江区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310117",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "songjiang_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "青浦区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310118",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "qingpu_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "奉贤区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310120",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "fengxian_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                },
+                {
+                    "name": "崇明区充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "region": "310151",
+                        "city_limit": true,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "chongming_charging_stations",
+                        "formats": ["csv", "json"]
+                    }
+                }
+            ]
         },
-        {
-            "name": "长宁区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310105",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "changning_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "静安区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310106",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "jingan_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "普陀区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310107",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "putuo_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "虹口区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310109",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "hongkou_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "杨浦区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310110",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "yangpu_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "闵行区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310112",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "minhang_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "宝山区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310113",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "baoshan_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "嘉定区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310114",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "jiading_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "浦东新区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310115",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "pudong_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "金山区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310116",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "jinshan_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "松江区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310117",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "songjiang_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "青浦区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310118",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "qingpu_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "奉贤区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310120",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "fengxian_charging_stations",
-                "formats": ["csv", "json"]
-            }
-        },
-        {
-            "name": "崇明区充电站搜索",
-            "search_type": "keywords",
-            "params": {
-                "keywords": "充电站|充电桩|充电设施",
-                "types": "011100|011101|011102|011103",
-                "region": "310151",
-                "city_limit": true,
-                "show_fields": "children,business,indoor,navi,photos",
-                "children": 1,
-                "page_size": 25
-            },
-            "output": {
-                "filename_prefix": "chongming_charging_stations",
-                "formats": ["csv", "json"]
-            }
+        "shanghai_around": {
+            "api": "gaode2",
+            "search_method": "around",
+            "tasks": [
+                {
+                    "name": "上海人民广场周边充电站搜索",
+                    "params": {
+                        "keywords": "充电站|充电桩|充电设施",
+                        "types": "011100|011101|011102|011103",
+                        "location": "121.472644,31.231706",
+                        "radius": 3000,
+                        "show_fields": "children,business,indoor,navi,photos",
+                        "children": 1,
+                        "page_size": 25
+                    },
+                    "output": {
+                        "filename_prefix": "peoples_square_around",
+                        "formats": ["csv", "json"]
+                    }
+                }
+            ]
         }
-    ],
+    },
     "global_settings": {
         "output_dir": "data/shanghai",
-        "add_timestamp": true
+        "add_timestamp": true,
+        "time_format": "%Y%m%d_%H%M",
+        "max_retries": 3,
+        "retry_delay": 1.0,
+        "log_level": "info",
+        "log_to_file": true,
+        "log_dir": "logs"
     }
 } 

@@ -6,7 +6,7 @@ import requests
 from src.utils.logger import Logger
 
 # 创建API专用日志记录器
-logger = Logger(log_dir="logs/api")
+logger = Logger.get_logger(name="gaode_api", log_level="info", log_to_file=True, log_dir="logs/api")
 
 
 class GaodeAPI2:
@@ -26,7 +26,9 @@ class GaodeAPI2:
         self.key = key
         self.page_size = 25  # 每页记录数，取值范围：1-25
         self.qps_delay = 0.5  # 每次请求之间的延时（秒）
-        self.logger = Logger()
+        self.logger = Logger.get_logger(name="gaode_api2")
+        self.timeout = 5  # 减小超时设置至5秒，使请求更快失败
+        self.max_retries = 2  # 最大重试次数
 
     def _make_request(self, endpoint: str, params: Dict) -> Dict:
         """
@@ -52,33 +54,57 @@ class GaodeAPI2:
             if key != 'key':  # 不打印 API key
                 self.logger.info(f"  {key}: {value}")
         
-        try:
-            # 添加请求延时
-            time.sleep(self.qps_delay)
-            
-            response = requests.get(url, params=params)
-            result = response.json()
-            
-            self.logger.info("\n=== API响应信息 ===")
-            self.logger.info(f"状态码: {result.get('status')}")
-            self.logger.info(f"信息: {result.get('info')}")
-            self.logger.info(f"总数: {result.get('count', '0')}")
-            if result.get('pois'):
-                self.logger.info(f"本次返回: {len(result['pois'])} 条数据")
-            
-            if result['status'] != '1':
-                if result.get('infocode') == '10009':  # QPS超限
-                    self.logger.warning("QPS超限，等待后重试...")
-                    time.sleep(1)
-                    return self._make_request(endpoint, params)
-                raise Exception(f"API调用失败: {result.get('info', '未知错误')}")
+        # 添加重试逻辑
+        retries = 0
+        while retries <= self.max_retries:
+            try:
+                # 添加请求延时
+                time.sleep(self.qps_delay)
                 
-            if result['infocode'] == '10044':
-                raise Exception('当日查询已限额，请明天再试')
+                self.logger.info(f"发送请求（超时设置: {self.timeout}秒，尝试 {retries+1}/{self.max_retries+1}）...")
+                # 设置connect和read超时都为self.timeout/2秒
+                response = requests.get(url, params=params, timeout=(self.timeout/2, self.timeout/2))
+                self.logger.info(f"请求响应状态码: {response.status_code}")
                 
-            return result
-        except requests.RequestException as e:
-            raise Exception(f"请求失败: {str(e)}")
+                # 尝试解析响应
+                self.logger.info("正在解析响应...")
+                result = response.json()
+                
+                self.logger.info("\n=== API响应信息 ===")
+                self.logger.info(f"状态码: {result.get('status')}")
+                self.logger.info(f"信息: {result.get('info')}")
+                self.logger.info(f"总数: {result.get('count', '0')}")
+                if result.get('pois'):
+                    self.logger.info(f"本次返回: {len(result['pois'])} 条数据")
+                
+                if result['status'] != '1':
+                    if result.get('infocode') == '10009':  # QPS超限
+                        self.logger.warning("QPS超限，等待后重试...")
+                        time.sleep(1)
+                        retries += 1
+                        continue
+                    raise Exception(f"API调用失败: {result.get('info', '未知错误')}")
+                    
+                if result['infocode'] == '10044':
+                    raise Exception('当日查询已限额，请明天再试')
+                    
+                return result
+            except requests.Timeout:
+                retries += 1
+                self.logger.error(f"请求超时（{self.timeout}秒），尝试第 {retries} 次重试...")
+                if retries > self.max_retries:
+                    raise Exception(f"API请求超时，已重试 {self.max_retries} 次，请检查网络连接或API服务器状态")
+            except requests.ConnectionError:
+                retries += 1
+                self.logger.error(f"网络连接错误，尝试第 {retries} 次重试...")
+                if retries > self.max_retries:
+                    raise Exception(f"网络连接失败，已重试 {self.max_retries} 次，请检查网络状态")
+            except requests.RequestException as e:
+                self.logger.error(f"请求异常: {str(e)}")
+                raise Exception(f"请求失败: {str(e)}")
+            except json.JSONDecodeError:
+                self.logger.error("解析响应失败，返回的不是有效的JSON格式")
+                raise Exception("API响应格式错误")
 
     def search_by_keywords(self, 
                          keywords: Optional[str] = None,
